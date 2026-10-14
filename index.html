@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Kraken Pirate Monitor</title>
+  <style>
+    :root {
+      --bg-color: #000000;
+      --cpu-color: #ff3366;
+      --liquid-color: #00e5ff;
+      --track-color: rgba(255, 255, 255, 0.1);
+      --font-family: 'Courier New', Courier, monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+    }
+
+    body, html {
+      width: 100%;
+      height: 100%;
+      background-color: var(--bg-color);
+      overflow: hidden;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-family: var(--font-family);
+    }
+
+    .container {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      border-radius: 50%;
+      overflow: hidden;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    /* Outer Gauge SVG overlay */
+    .gauge-svg {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      transform: rotate(-90deg);
+      z-index: 2;
+    }
+
+    circle {
+      fill: none;
+      stroke-linecap: round;
+      transition: stroke-dashoffset 0.5s ease-in-out, stroke 0.3s ease;
+    }
+
+    .bg-arc {
+      stroke: var(--track-color);
+      stroke-width: 18;
+    }
+
+    .val-arc {
+      stroke-width: 18;
+    }
+
+    /* Central Graphic */
+    .graphic-wrapper {
+      position: absolute;
+      width: 62%;
+      height: 62%;
+      z-index: 1;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .graphic-wrapper img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      image-rendering: pixelated;
+      filter: drop-shadow(0px 0px 12px rgba(0, 0, 0, 0.8));
+    }
+
+    /* Overlay Labels & Values */
+    .readout {
+      position: absolute;
+      z-index: 3;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-shadow: 0px 0px 8px #000, 0px 0px 4px #000;
+    }
+
+    .readout.cpu {
+      top: 6%;
+    }
+
+    .readout.liquid {
+      bottom: 6%;
+    }
+
+    .label {
+      font-size: 14px;
+      font-weight: 900;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+    }
+
+    .value {
+      font-size: 32px;
+      font-weight: bold;
+      line-height: 1;
+      margin-top: 2px;
+    }
+
+    .cpu .label { color: var(--cpu-color); }
+    .cpu .value { color: #ffffff; }
+
+    .liquid .label { color: var(--liquid-color); }
+    .liquid .value { color: #ffffff; }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <!-- SVG Gauges -->
+    <svg class="gauge-svg" viewBox="0 0 600 600">
+      <!-- Background arcs -->
+      <circle class="bg-arc" cx="300" cy="300" r="275" id="cpu-bg" />
+      <circle class="bg-arc" cx="300" cy="300" r="275" id="liquid-bg" />
+
+      <!-- Active Value arcs -->
+      <circle class="val-arc" id="cpu-bar" cx="300" cy="300" r="275" stroke="var(--cpu-color)" />
+      <circle class="val-arc" id="liquid-bar" cx="300" cy="300" r="275" stroke="var(--liquid-color)" />
+    </svg>
+
+    <!-- Center Pirate Graphic -->
+    <div class="graphic-wrapper">
+      <img src="Smiley_NO BG.jpg" alt="Pirate Logo" />
+    </div>
+
+    <!-- Temperature Display Labels -->
+    <div class="readout cpu">
+      <span class="label">CPU</span>
+      <span class="value" id="cpu-temp">--°C</span>
+    </div>
+
+    <div class="readout liquid">
+      <span class="value" id="liquid-temp">--°C</span>
+      <span class="label">LIQUID</span>
+    </div>
+  </div>
+
+  <script>
+    // Circle circumference parameters (Radius = 275 -> Circumference ≈ 1727.87)
+    const R = 275;
+    const CIRCUMFERENCE = 2 * Math.PI * R;
+    const ARC_LENGTH = CIRCUMFERENCE * 0.42; // ~150 degrees arc per meter
+
+    const cpuBar = document.getElementById('cpu-bar');
+    const liquidBar = document.getElementById('liquid-bar');
+    const cpuBg = document.getElementById('cpu-bg');
+    const liquidBg = document.getElementById('liquid-bg');
+
+    const cpuText = document.getElementById('cpu-temp');
+    const liquidText = document.getElementById('liquid-temp');
+
+    function initGauges() {
+      // Set dash patterns for semi-circular arcs
+      [cpuBar, liquidBar, cpuBg, liquidBg].forEach(el => {
+        el.style.strokeDasharray = `${ARC_LENGTH} ${CIRCUMFERENCE - ARC_LENGTH}`;
+      });
+
+      // Position Top Arc (CPU) centered at top
+      const cpuOffsetAngle = -22.5; 
+      cpuBar.style.transformOrigin = '300px 300px';
+      cpuBg.style.transformOrigin = '300px 300px';
+      cpuBar.style.transform = `rotate(${cpuOffsetAngle}deg)`;
+      cpuBg.style.transform = `rotate(${cpuOffsetAngle}deg)`;
+
+      // Position Bottom Arc (Liquid) centered at bottom
+      const liquidOffsetAngle = 157.5;
+      liquidBar.style.transformOrigin = '300px 300px';
+      liquidBg.style.transformOrigin = '300px 300px';
+      liquidBar.style.transform = `rotate(${liquidOffsetAngle}deg)`;
+      liquidBg.style.transform = `rotate(${liquidOffsetAngle}deg)`;
+
+      // Set initial values
+      updateGauge(cpuBar, 0, 100);
+      updateGauge(liquidBar, 0, 60);
+    }
+
+    function updateGauge(element, val, maxVal) {
+      const pct = Math.min(Math.max(val / maxVal, 0), 1);
+      const offset = ARC_LENGTH * (1 - pct);
+      element.style.strokeDashoffset = offset;
+    }
+
+    // Connect to NZXT CAM API
+    function handleCAMData(data) {
+      if (!data) return;
+
+      // Extract CPU Temperature
+      if (data.cpus && data.cpus.length > 0) {
+        const cpuTemp = Math.round(data.cpus[0].temperature || 0);
+        cpuText.textContent = `${cpuTemp}°C`;
+        updateGauge(cpuBar, cpuTemp, 100);
+      }
+
+      // Extract Liquid / Cooler Temperature
+      if (data.kraken && data.kraken.liquidTemperature !== undefined) {
+        const liqTemp = Math.round(data.kraken.liquidTemperature);
+        liquidText.textContent = `${liqTemp}°C`;
+        updateGauge(liquidBar, liqTemp, 60);
+      } else if (data.gpus && data.gpus.length > 0) {
+        // Fallback to GPU temp if liquid sensor isn't present
+        const gpuTemp = Math.round(data.gpus[0].temperature || 0);
+        liquidText.textContent = `${gpuTemp}°C`;
+        updateGauge(liquidBar, gpuTemp, 90);
+      }
+    }
+
+    // Register CAM Monitoring Hook
+    window.nzxt = {
+      v1: {
+        onMonitoringDataUpdate: (data) => {
+          handleCAMData(data);
+        }
+      }
+    };
+
+    // Initialize Layout
+    initGauges();
+
+    // Mock Data Generator for testing in standard browser window
+    const isKraken = window.location.search.includes('kraken=1');
+    if (!isKraken) {
+      setInterval(() => {
+        const mockData = {
+          cpus: [{ temperature: 42 + Math.random() * 15 }],
+          kraken: { liquidTemperature: 28 + Math.random() * 5 }
+        };
+        handleCAMData(mockData);
+      }, 1000);
+    }
+  </script>
+</body>
+</html>
