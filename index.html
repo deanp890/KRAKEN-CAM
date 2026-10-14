@@ -42,7 +42,6 @@
       align-items: center;
     }
 
-    /* Outer Gauge SVG overlay filling entire bounds */
     .gauge-svg {
       position: absolute;
       top: 0;
@@ -68,7 +67,6 @@
       stroke-width: 22;
     }
 
-    /* Central Graphic maximized */
     .graphic-wrapper {
       position: absolute;
       width: 78%;
@@ -87,7 +85,6 @@
       filter: drop-shadow(0px 0px 16px rgba(0, 0, 0, 0.9));
     }
 
-    /* Overlay Labels & Values pushed outward */
     .readout {
       position: absolute;
       z-index: 3;
@@ -129,7 +126,6 @@
 <body>
 
   <div class="container">
-    <!-- SVG Gauges (ViewBox 600x600, Radius 272) -->
     <svg class="gauge-svg" viewBox="0 0 600 600">
       <circle class="bg-arc" cx="300" cy="300" r="272" id="cpu-bg" />
       <circle class="bg-arc" cx="300" cy="300" r="272" id="liquid-bg" />
@@ -138,12 +134,11 @@
       <circle class="val-arc" id="liquid-bar" cx="300" cy="300" r="272" stroke="var(--liquid-color)" />
     </svg>
 
-    <!-- Center Pirate Graphic (Fixed asset reference) -->
+    <!-- Updated path using repository subfolder structure -->
     <div class="graphic-wrapper">
-      <img src="Smiley_NO BG.jpg" alt="Pirate Logo" />
+      <img src="./Smiley_NO BG.jpg" alt="Pirate Logo" onerror="this.onerror=null; this.src='Smiley_NO BG.jpg';" />
     </div>
 
-    <!-- Temperature Display Labels -->
     <div class="readout cpu">
       <span class="label">CPU</span>
       <span class="value" id="cpu-temp">--°C</span>
@@ -218,15 +213,10 @@
     window.nzxt = {
       v1: {
         onMonitoringDataUpdate: (data) => {
-          handleData(data);
+          handleCAMData(data);
         }
       }
     };
-
-    // Safe handler wrapper to support legacy or alternative CAM callback property naming
-    function handleData(data) {
-      handleCAMData(data);
-    }
 
     initGauges();
 
